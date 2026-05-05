@@ -2,7 +2,7 @@ name: AI News Digest
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # TESTING: every 10 min — change to "0 8 */2 * *" when confirmed working
+    - cron: "0 8 */2 * *"  # every 2 days at 8 AM UTC
   workflow_dispatch:
 
 permissions:
