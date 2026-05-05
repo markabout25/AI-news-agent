@@ -36,3 +36,25 @@ jobs:
           git add summaries/
           git diff --staged --quiet || git commit -m "digest: $(date +'%Y-%m-%d')"
           git push
+
+      - name: Read digest content
+        id: digest
+        run: |
+          FILE=$(ls summaries/*.md | grep -v '.gitkeep' | sort | tail -1)
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          cat "$FILE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: markalexanderreich@gmail.com
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "AI News Digest — ${{ env.DATE }}"
+          to: markalexanderreich@gmail.com
+          from: AI Digest Bot <markalexanderreich@gmail.com>
+          body: ${{ steps.digest.outputs.body }}
+        env:
+          DATE: ${{ github.run_started_at }}
