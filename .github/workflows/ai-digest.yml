@@ -2,8 +2,8 @@ name: AI News Digest
 
 on:
   schedule:
-    - cron: "0 8 */2 * *"  # every 2 days at 8 AM UTC
-  workflow_dispatch:         # allow manual trigger from GitHub UI
+    - cron: "*/10 * * * *"   # TESTING: every 10 min — change to "0 8 */2 * *" when confirmed working
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,9 +24,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run agent
+      - name: Run agent (fetch + summarize + email)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER: markalexanderreich@gmail.com
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python agent.py
 
       - name: Commit digest
@@ -36,22 +38,3 @@ jobs:
           git add summaries/
           git diff --staged --quiet || git commit -m "digest: $(date +'%Y-%m-%d')"
           git push
-
-      - name: Get digest file path
-        id: digest
-        run: |
-          FILE=$(ls summaries/*.md | grep -v '.gitkeep' | sort | tail -1)
-          echo "filepath=$FILE" >> $GITHUB_OUTPUT
-          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-
-      - name: Send email
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: markalexanderreich@gmail.com
-          password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          subject: "AI News Digest — ${{ steps.digest.outputs.date }}"
-          to: markalexanderreich@gmail.com
-          from: AI Digest Bot <markalexanderreich@gmail.com>
-          body_filepath: ${{ steps.digest.outputs.filepath }}
